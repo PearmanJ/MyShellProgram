@@ -388,9 +388,9 @@ void executeHistory(char* tempBuffer){
 		int temp = CheckHowManyPipes(tempBuffer);
 		if(temp==1)
 			DoPipes(tempBuffer);
-		else if(temp==2)
+		else if(temp>1)
 			DoPipes2(tempBuffer);
-		else if(temp<=0 || temp>2){
+		else if(temp<=0){
 			printf("Non Supported Command\n");
 		}
 	}
