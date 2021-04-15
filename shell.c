@@ -32,6 +32,9 @@
 //Course: Advanced Operating Systems
 
 //global history buffer and global linebuffer for each user input
+char inputBuffer[512];
+char input2Buffer[512];
+char input3Buffer[512];
 char lineBuffer[512];
 char History[10][512];
 
@@ -60,11 +63,55 @@ void printHelp(){
 	printf("> time <command> -execute command and its execution time \n");		
 	printf("----------------------------------------------------------\n");	
 }
-
+//readLine and trim leading adn trailing blank space
+void trimString(){
+	fgets(inputBuffer,512,stdin);	
+	inputBuffer[strcspn(inputBuffer,"\n")]=0;
+	if(inputBuffer[0]==' '){
+		int i = 0, j=0;
+		while(inputBuffer[i] != '\0'){
+			if(i==0){
+				
+			}
+			else if(!(inputBuffer[i]==' ' && inputBuffer[i+1]==' ')){
+				input2Buffer[j]=inputBuffer[i];
+				j++;
+			}			
+			i++;
+		}
+		if(input2Buffer[0]==' '){
+			int x = 0;
+			while(input2Buffer[x] != '\0'){
+				input3Buffer[x]=input2Buffer[x+1];
+				x++;
+			}
+		}
+		else{
+			strcpy(input3Buffer,input2Buffer);
+		}
+	}
+	else{
+		strcpy(input3Buffer,inputBuffer);
+	}
+	int len=strlen(input3Buffer);
+	int i;
+	for(i = len-1; i >= 0;i--){
+		if(input3Buffer[i]!=' '){
+			break;	
+		}
+		input3Buffer[i]='\0';
+	}
+	strcpy(lineBuffer,input3Buffer);
+	
+	//lineBuffer[strcspn(lineBuffer,"\n")]=0;
+	//printf("input: !%s!\n",inputBuffer);
+	//printf("line: !%s!\n",lineBuffer);
+}
 //read user commands
-void readLine(){	
-	fgets(lineBuffer,512,stdin);	
-	lineBuffer[strcspn(lineBuffer,"\n")]=0;	
+void readLine(){
+	trimString();
+	//fgets(lineBuffer,512,stdin);	
+	//lineBuffer[strcspn(lineBuffer,"\n")]=0;	
 }
 
 //tokenize a single command(no pipes)
@@ -484,7 +531,7 @@ int main( int argc, char *argv[] )
 {	
 	char** cmd;	
 	int timeFlag = 0;
-	clock_t t;	
+	clock_t t,t2;	
 	
 	printWelcome();
 		   
@@ -495,11 +542,20 @@ int main( int argc, char *argv[] )
 		//printf(BLUE "<>$: " DEFAULT);
 		
 		readLine();	
-		
-		if(strstr(lineBuffer,"time ")!=NULL){			
+		//printf("BUFFER: !%s!\n",lineBuffer);
+		if(strstr(lineBuffer,"time ")!=NULL){	
+			if(strlen(lineBuffer)<6)
+				continue;	
 			timeFlag=1;
 			removeTime(lineBuffer);
 			t = clock();
+		}
+		if(strstr(lineBuffer,"time")!=NULL){
+			if(strlen(lineBuffer)<6)
+				continue;			
+		}
+		if(strstr(lineBuffer,"time  ")!=NULL){			
+			continue;			
 		}
 		if(checkForBuiltIn(lineBuffer)==0){//BUILT INT
 			addHistory(lineBuffer);
@@ -527,8 +583,8 @@ int main( int argc, char *argv[] )
 		}					
 		strcpy(lineBuffer,"");
 		if(timeFlag==1){
-			t = clock();
-			double exec_time = (double)t/CLOCKS_PER_SEC;
+			t2 = clock();
+			double exec_time = (double)(t2-t)/CLOCKS_PER_SEC;
 			printf(BMAGENTA "\nExecution Time:" DEFAULT);
 			printf(BYELLOW " %f seconds\n" DEFAULT,exec_time);
 			timeFlag=0;
