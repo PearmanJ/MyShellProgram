@@ -101,17 +101,11 @@ void trimString(){
 		}
 		input3Buffer[i]='\0';
 	}
-	strcpy(lineBuffer,input3Buffer);
-	
-	//lineBuffer[strcspn(lineBuffer,"\n")]=0;
-	//printf("input: !%s!\n",inputBuffer);
-	//printf("line: !%s!\n",lineBuffer);
+	strcpy(lineBuffer,input3Buffer);	
 }
 //read user commands
 void readLine(){
-	trimString();
-	//fgets(lineBuffer,512,stdin);	
-	//lineBuffer[strcspn(lineBuffer,"\n")]=0;	
+	trimString();	
 }
 
 //tokenize a single command(no pipes)
@@ -170,10 +164,7 @@ void execute_command(char** command){
 //then parent waits and we get our result
 //function is uses since DoPipes2 seg faulted with only 1
 //pipe and debugging/time cruntch couldnt find as to why.
-void DoPipes(char* tempBuffer){	
-	//printf("doing pipes...\n");
-	//addHistory(tempBuffer);
-	
+void DoPipes(char* tempBuffer){		
 	char** cmd1;
 	char** cmd2;
 	char* token;
@@ -199,7 +190,8 @@ void DoPipes(char* tempBuffer){
 		}
 		if(flag==0){
 			cmd1[index++] = token;
-
+			
+			//generally not needed
 			if(index > word_buff_size){ //if for some reason we need more memory, allocate more
 				cmd1=realloc(cmd1,(word_buff_size*2)*sizeof(char*));
 				if(!cmd1){
@@ -212,7 +204,8 @@ void DoPipes(char* tempBuffer){
 		}
 		else if(flag==1){
 			cmd2[index2++] = token;
-
+			
+			//generally not needed
 			if(index2 > word_buff_size){ //if for some reason we need more memory, allocate more
 				cmd2=realloc(cmd2,(word_buff_size*2)*sizeof(char*));
 				if(!cmd2){
@@ -226,8 +219,6 @@ void DoPipes(char* tempBuffer){
 	}
 	cmd1[index]=NULL;
 	cmd2[index2]=NULL;
-	
-	//printf("CHECK\n");
 	
 	//create and execute pipes
 	int cfd[2];	
@@ -317,17 +308,15 @@ void DoPipes2(char* tempBuffer){
 		
 		token = strtok(NULL," ");		
 	}
-	listCMD[index+1]=NULL;
+	listCMD[index+1]=NULL;	
 	
-	//loop_pipe(listCMD);
 	int cfd[2];
 	int prev = 0;
 	pid_t pid;
 	
-	//int alternate = 0;
+	
 	int i=0;
 	for(i=0;i<levels;i++){		
-		//listCMD[i]
 		if(pipe(cfd)==-1){
 			printf("Error Creating Pipe\n");
 			exit(0);
@@ -411,24 +400,20 @@ void printHistory(){
 		if(strcmp(History[i],"")==0)
 			break;
 		printf("%d: %s\n",(i+1),History[i]);	
-	}
-	//printf("Printed..\n");
+	}	
 }
 
-void addHistory(char* tempBuffer){
-	//printf("updating history...%s\n", tempBuffer);
+void addHistory(char* tempBuffer){	
 	if(strcmp(tempBuffer,"history")!=0){
 		shiftHistory(tempBuffer);	
 	}	
 }
 
-void executeHistory(char* tempBuffer){
-	//printf("executing... %s\n",tempBuffer);
+void executeHistory(char* tempBuffer){	
 	char** cmd;	
 	
-	if(checkForBuiltIn(tempBuffer)==0){//BUILT INT
-		addHistory(tempBuffer);
-		//continue;	
+	if(checkForBuiltIn(tempBuffer)==0){
+		addHistory(tempBuffer);		
 	}
 	else if(checkForBuiltIn(tempBuffer)==2){ //PIPES	
 		addHistory(tempBuffer);
@@ -466,11 +451,9 @@ void handleHistory(char *tempBuffer){
 		printf("--- Command History ---\n");
 		printHistory();
 	}
-	else{
-		//printf("OTHER History...\n");
+	else{		
 		char* token;
-		char** history_tokens;
-		//int index=0, params=0;
+		char** history_tokens;		
 
 		history_tokens = malloc( 16 * sizeof(char*));
 		if(!history_tokens){
@@ -535,14 +518,15 @@ int main( int argc, char *argv[] )
 	
 	printWelcome();
 		   
-	while(1){	
-		//printf("\n");
+	//Main Shell Loop
+	while(1){		
 		printf(BGREEN "<>" DEFAULT);
-		printf(BBLUE "$: " DEFAULT);
-		//printf(BLUE "<>$: " DEFAULT);
+		printf(BBLUE "$: " DEFAULT);		
 		
+		//Read input
 		readLine();	
-		//printf("BUFFER: !%s!\n",lineBuffer);
+		
+		//Handle input
 		if(strstr(lineBuffer,"time ")!=NULL){	
 			if(strlen(lineBuffer)<6)
 				continue;	
@@ -557,31 +541,33 @@ int main( int argc, char *argv[] )
 		if(strstr(lineBuffer,"time  ")!=NULL){			
 			continue;			
 		}
-		if(checkForBuiltIn(lineBuffer)==0){//BUILT INT
-			addHistory(lineBuffer);
-			//continue;	
+		if(checkForBuiltIn(lineBuffer)==0){//BUILT IN Function
+			addHistory(lineBuffer);			
 		}
 		else if(checkForBuiltIn(lineBuffer)==2){ //PIPES	
 			addHistory(lineBuffer);
 			int temp = CheckHowManyPipes(lineBuffer);
 			if(temp==1)
 				DoPipes(lineBuffer);
-			else if(temp>1) //was ==2
+			else if(temp>1) 
 				DoPipes2(lineBuffer);
 			else if(temp<=0){
 				printf("Non Supported Command\n");
 			}
 		}
-		else if(checkForBuiltIn(lineBuffer)==3){
+		else if(checkForBuiltIn(lineBuffer)==3){ //History Command
 			handleHistory(lineBuffer);	
 		}
-		else{//basic function
-			//printf("BUFFER: %s\n",lineBuffer);
+		else{//basic function			
 			addHistory(lineBuffer);
 			cmd = dealWithLine(lineBuffer);		
 			execute_command(cmd);			
 		}					
+		
+		//clear buffer
 		strcpy(lineBuffer,"");
+		
+		//If time flag used, print time
 		if(timeFlag==1){
 			t2 = clock();
 			double exec_time = (double)(t2-t)/CLOCKS_PER_SEC;
@@ -590,5 +576,6 @@ int main( int argc, char *argv[] )
 			timeFlag=0;
 		}
 	}
+	//Free cmd memory
 	free(cmd);
 }
